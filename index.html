@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Scheduler</title>
+    <style>
+        /* Static highlighted text style */
+        .highlighted {
+            font-size: 32px; /* Larger font for title */
+            font-weight: bold; /* Bold text for emphasis */
+            color: navy; /* Navy blue text */
+            background-color: gold; /* Gold background */
+            text-align: center; /* Center the text */
+            padding: 15px; /* Add padding for better visibility */
+            border-radius: 8px; /* Slightly rounded edges */
+            margin: 0;
+            position: fixed; /* Fix the text at the top of the page */
+            top: 0; /* Align to the top */
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%); /* Center alignment */
+            width: 100%; /* Stretch the width */
+            box-sizing: border-box; /* Ensure padding doesn't exceed the width */
+        }
+    </style>
+</head>
+<body>
+    <div id="shift-display" class="highlighted">Loading...</div>
+
+    <script>
+        // Static schedule for shifts
+        const shifts = [
+            { name: "Natali", days: ["Wednesday", "Thursday", "Friday", "Saturday"], start: "10:00", end: "20:00" },
+            { name: "Zy", days: ["Sunday", "Monday", "Tuesday", "Saturday"], start: "12:00", end: "22:00" },
+            { name: "Noah", days: ["Sunday", "Thursday", "Friday", "Saturday"], start: "07:00", end: "17:00" },
+            { name: "Toni", days: ["Sunday", "Monday", "Tuesday", "Saturday"], start: "09:00", end: "19:00" },
+            { name: "Donna", days: ["Sunday", "Monday", "Tuesday", "Wednesday"], start: "21:00", end: "07:00" },
+            { name: "Vinz", days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], start: "07:00", end: "17:00" },
+            { name: "Cent", days: ["Tuesday", "Wednesday", "Thursday", "Friday"], start: "15:00", end: "01:00" },
+            { name: "Marj", days: ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], start: "11:00", end: "20:00" },
+            { name: "Charlene", days: ["Wednesday", "Thursday", "Friday", "Saturday"], start: "21:00", end: "07:00" }
+        ];
+
+        // Function to get Atlanta time
+        function getAtlantaTime() {
+            const now = new Date();
+            const atlantaFormatter = new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/New_York",
+                weekday: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false // 24-hour format
+            });
+
+            const atlantaDate = atlantaFormatter.formatToParts(now);
+            const atlantaDay = atlantaDate.find(part => part.type === "weekday").value;
+            const atlantaHour = atlantaDate.find(part => part.type === "hour").value.padStart(2, '0');
+            const atlantaMinute = atlantaDate.find(part => part.type === "minute").value.padStart(2, '0');
+            const atlantaTime = `${atlantaHour}:${atlantaMinute}`;
+
+            return { day: atlantaDay, time: atlantaTime };
+        }
+
+        // Function to get all people on shift
+        function getCurrentShifts() {
+            const atlantaNow = getAtlantaTime();
+            const currentDay = atlantaNow.day;
+            const currentTime = atlantaNow.time;
+
+            // Find all shifts that overlap with the current time
+            const currentShifts = shifts.filter(shift => {
+                // Handle overnight shifts (end time < start time, e.g., 21:00-07:00)
+                if (shift.start > shift.end) {
+                    return (
+                        shift.days.includes(currentDay) &&
+                        (currentTime >= shift.start || currentTime < shift.end)
+                    );
+                }
+                return (
+                    shift.days.includes(currentDay) &&
+                    currentTime >= shift.start &&
+                    currentTime < shift.end
+                );
+            });
+
+            const shiftDisplay = document.getElementById("shift-display");
+
+            if (currentShifts.length > 0) {
+                // Create a message with all names and the phrase
+                const names = currentShifts.map(shift => shift.name).join(" ");
+                shiftDisplay.innerHTML = `ON SHIFT: ${names}`;
+            } else {
+                shiftDisplay.innerText = `No one is currently on shift.`;
+            }
+        }
+
+        // Run the function and update every minute
+        getCurrentShifts();
+        setInterval(getCurrentShifts, 60000);
+    </script>
+</body>
+</html>
